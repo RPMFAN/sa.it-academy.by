@@ -1,0 +1,63 @@
+pipeline {
+    agent any
+    environment {
+        BUILD = "${env.BUILD_ID}"
+    }
+    parameters {
+        choice(name: 'repository_branch', choices: ['master', 'dev', 'qa'], description: 'Choice branch')
+        string(name: 'repository_url', defaultValue: 'https://github.com/RPMFAN/vigilant-fortnight.git', description: 'Github repository url')
+        booleanParam(name: 'remove', defaultValue: true, description: 'Do we need clean old one package?')
+    }
+    stages {
+        stage('Clone repository') {
+            steps {
+                    git url: "${params.repository_url}", branch: "${params.repository_branch}"
+            }
+        }
+        stage('Checking repository'){
+            steps {
+                sh "ls -l"
+            }
+        }
+        stage('Packing project') {
+            steps {
+                sh '''
+                     tar -zcvf /tmp/$BUILD.tar.gz  ./
+                     cp /tmp/$BUILD.tar.gz  ./
+                '''
+            }
+        }
+        stage('Remove') {
+            when {
+                expression {params.remove == true}
+            }
+            steps {
+                sh 'rm -f /tmp/*.tar.gz'
+            }
+        }
+        stage('Packing test') {
+            steps {
+                sh "ls -l"
+            }
+        }
+        stage('Test') {
+            steps {
+                sh """
+                echo 'test'
+                """
+            }
+        }
+    }
+    post {
+        aborted {
+            slackSend (color: '#a5a4a4', message: "ABORTED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+        }
+        success {
+            slackSend (color: '#00c63b', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+        }
+        failure {
+            slackSend (color: '#e20606', message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+        }
+    }
+        
+}
