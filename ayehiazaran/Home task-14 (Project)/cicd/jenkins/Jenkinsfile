@@ -19,11 +19,32 @@ pipeline {
                 sh "ls -l"
             }
         }
-        stage('Packing project') {
+        stage('Test') {
+            steps {
+                sh '''
+                     cd ./backend/ && mvn test     
+                '''
+            }
+        }
+        stage('Build') {
+            steps {
+                sh '''
+                cd ./backend/ && mvn clean install
+                '''
+            }
+        }
+        stage('Peparing Dockerfile') {
+            steps {
+                sh '''
+                     ./
+                '''
+            }
+        }
+        stage('Deploy') {
             steps {
                 sh '''
                      tar -zcvf /tmp/$BUILD.tar.gz  ./
-                     cp /tmp/$BUILD.tar.gz  ./
+                     cp /tmp/$BUILD.tar.gz  /etc/ansible/roles/deploy_itproject/files
                 '''
             }
         }
